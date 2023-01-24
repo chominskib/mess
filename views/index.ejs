@@ -2,6 +2,21 @@
 	<head>
 		<meta charset="UTF-8">
 
+		<!-- might want to move the style section into another file in future, but now it seems ok -->
+		<style> 
+			.myMessage {
+				text-align: right;
+				background-color: black;
+				color: white;
+			}
+
+			.extMessage {
+				text-align: left;
+				background-color: blue;
+				color: white;
+			}
+		</style>
+
 		<link rel="icon" type="image/x-icon" href="/favicon.ico">
 		<title>Mess | WEPPO Project</title>
 
@@ -11,6 +26,9 @@
 		<center>
 			<h1> Mess </h1>
 		</center>
+
+		<div id='messages'>
+		</div>
 
 		<form action="" id="form">
 			<input id="messagebox" autocomplete="off" /><button>Send</button>
@@ -31,7 +49,27 @@
   			});
 
 			socket.on('ack', function(msg) {
+				const newMessage = document.createElement('div');
+				newMessage.setAttribute('class', 'myMessage');
+				const newMessageContent = document.createTextNode("You: " + msg);
+
+				newMessage.appendChild(newMessageContent);
+
+				var messageList = document.getElementById('messages');
+				messageList.insertBefore(newMessage, null);
 				console.log(msg+' sent!');
+  			});
+
+			socket.on('msg', function(msg, sender) {
+				const newMessage = document.createElement('div');
+				newMessage.setAttribute('class', 'extMessage');
+				const newMessageContent = document.createTextNode(sender + ": " + msg);
+
+				newMessage.appendChild(newMessageContent);
+
+				var messageList = document.getElementById('messages');
+				messageList.insertBefore(newMessage, null);
+				console.log(msg+' received!');
   			});
 		</script>
 	</body>

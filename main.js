@@ -19,9 +19,10 @@ app.get('/favicon.ico', (req, res) => {
 });
 
 io.on('connection', (socket) => {
-	console.log("xivlo to rzal");
+	console.log("New agent (" + socket.id + ") connected!");
 	socket.on('chat message', (msg) => {
 		socket.emit('ack', msg);
+		socket.broadcast.emit('msg', msg, socket.id);
 	});
 });
 
