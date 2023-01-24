@@ -1,5 +1,6 @@
 var express = require('express');
 var http = require('http');
+var path = require('path');
 
 var app = express();
 var server = http.createServer(app);
@@ -11,13 +12,16 @@ app.set('views', './views');
 
 app.get('/', (req, res) => {
 	res.render('index');
-})
+});
+
+app.get('/favicon.ico', (req, res) => {
+	res.sendFile(path.join(__dirname, '/images/favicon.ico'));
+});
 
 io.on('connection', (socket) => {
 	console.log("xivlo to rzal");
 	socket.on('chat message', (msg) => {
-		console.log(socket.id);
-		socket.emit('xd', msg);
+		socket.emit('ack', msg);
 	});
 });
 

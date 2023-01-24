@@ -1,6 +1,10 @@
 <html>
 	<head>
 		<meta charset="UTF-8">
+
+		<link rel="icon" type="image/x-icon" href="/favicon.ico">
+		<title>Mess | WEPPO Project</title>
+
 		<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 	</head>
 	<body>
@@ -26,8 +30,8 @@
     				}
   			});
 
-			socket.on('xd', function(msg) {
-				console.log(msg);
+			socket.on('ack', function(msg) {
+				console.log(msg+' sent!');
   			});
 		</script>
 	</body>
