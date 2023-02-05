@@ -43,7 +43,11 @@
 			form.addEventListener('submit', function(e) {
     				e.preventDefault();
     				if(input.value){
-      					socket.emit('chat message', input.value);
+					const signed_user_id = document.cookie
+  					                               .split('; ')
+					                               .find((row) => row.startsWith('user_id='))
+					                               ?.split('=')[1];
+      					socket.emit('chat message', input.value, signed_user_id);
       					input.value = '';
     				}
   			});
