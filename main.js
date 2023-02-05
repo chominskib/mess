@@ -56,6 +56,11 @@ app.post('/login', (req, res) => {
 	}
 });
 
+app.get('/logout', authorize, (req, res) => {
+	res.cookie('signed_user_id', '', { maxAge: -1 });
+	res.redirect('/');
+});
+
 io.on('connection', (socket) => {
 	console.log("New agent (" + socket.id + ") connected!");
 	socket.on('chat message', (msg, sender) => {
