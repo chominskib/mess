@@ -29,6 +29,8 @@
 
 		<a href="/logout"><button>Logout</button></a>
 
+		You're chatting with <%= receiverHandle %>.
+
 		<div id='messages'>
 		</div>
 
@@ -38,6 +40,12 @@
 
 		<script>
   			var socket = io();
+	
+			function signed_user_id(){
+				return document.cookie.split('; ').find((row) => row.startsWith('signed_user_id='))?.split('=')[1];
+			}
+
+			socket.emit('refresh messages', signed_user_id(), '<%= receiverHandle %>');
 
 			var form = document.getElementById('form');
 			var input = document.getElementById('messagebox');
@@ -45,16 +53,12 @@
 			form.addEventListener('submit', function(e) {
     				e.preventDefault();
     				if(input.value){
-					const signed_user_id = document.cookie
-  					                               .split('; ')
-					                               .find((row) => row.startsWith('signed_user_id='))
-					                               ?.split('=')[1];
-      					socket.emit('chat message', input.value, signed_user_id);
+      					socket.emit('chat message', input.value, signed_user_id(), '<%= receiverHandle %>');
       					input.value = '';
     				}
   			});
 
-			socket.on('ack', function(msg) {
+			socket.on('ack', function(msg, senderHandle, receiverHandle) {
 				const newMessage = document.createElement('div');
 				newMessage.setAttribute('class', 'myMessage');
 				const newMessageContent = document.createTextNode("You: " + msg);
@@ -63,19 +67,24 @@
 
 				var messageList = document.getElementById('messages');
 				messageList.insertBefore(newMessage, null);
-				console.log(msg+' sent!');
+				console.log(msg+' sent to ' + receiverHandle);
   			});
 
-			socket.on('msg', function(msg, sender) {
+			socket.on('nak', function(msg, senderHandle, receiverHandle) {
+  				alert("Something went wrong!");
+			});
+
+
+			socket.on('msg', function(msg, senderHandle, receiverHandle) {
 				const newMessage = document.createElement('div');
 				newMessage.setAttribute('class', 'extMessage');
-				const newMessageContent = document.createTextNode(sender + ": " + msg);
+				const newMessageContent = document.createTextNode(senderHandle + ": " + msg);
 
 				newMessage.appendChild(newMessageContent);
 
 				var messageList = document.getElementById('messages');
 				messageList.insertBefore(newMessage, null);
-				console.log(msg+' received!');
+				console.log(msg+' received from ' + senderHandle);
   			});
 		</script>
 	</body>

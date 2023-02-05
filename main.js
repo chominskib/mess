@@ -41,9 +41,15 @@ function addUser(username, password, city){
 	pool.query("insert into users (username, salt, password, city) values ($1, $2, $3, $4);", [username, salt, hashedPassword, city]);
 }
 
+async function getUserId(username){
+	var result = await pool.query("select * from users where username=$1;", [username]);
+	if(result.rows[0] === undefined) return undefined;
+	return result.rows[0].id;
+}
+
 async function getUsername(userId){
 	var result = await pool.query("select * from users where id=$1;", [userId]);
-	if(!result.rows) return null;
+	if(result.rows[0] === undefined) return undefined;
 	return result.rows[0].username;
 }
 
@@ -55,13 +61,42 @@ function authorize(req, res, next){
 	}
 }
 
+function unsign(cookie){
+	if(cookie === undefined || cookie.substr(0, 2) !== "s:") return;
+	var unsigned = cookieVerifier.unsign(cookie.slice(2), cookieSecret);
+	if(!unsigned) return undefined;
+	return unsigned;
+}
+
+async function sendMessage(senderUsername, receiverUsername, content, messagetime){
+	var result = await pool.query("insert into messages (id_sender, id_receiver, content, messagetime) values ($1, $2, $3, $4);", 
+		     [await getUserId(senderUsername), await getUserId(receiverUsername), content, messagetime]);
+
+	return result;
+}
+
+async function getMessages(senderUsername, receiverUsername){
+	var result = await pool.query("select * from messages where id_sender=$1 and id_receiver=$2;", [await getUserId(senderUsername), await getUserId(receiverUsername)]);
+
+	return result;
+}
+
 app.set('view engine', 'ejs');
 app.set('views', './views');
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser(cookieSecret));
 
-app.get('/', authorize, (req, res) => {
-	res.render('index');
+app.get('/', (req, res) => {
+	res.render('login', { message: "" });
+});
+
+app.get('/chat/:receiverHandle', authorize, async (req, res) => {
+	var result = await getUserId(req.params.receiverHandle);
+	if(result === undefined){
+		res.redirect('/');
+		return;
+	}
+	res.render('chat', { receiverHandle: req.params.receiverHandle });
 });
 
 app.get('/favicon.ico', (req, res) => {
@@ -106,13 +141,25 @@ app.get('/logout', authorize, (req, res) => {
 
 io.on('connection', (socket) => {
 	console.log("New agent (" + socket.id + ") connected!");
-	socket.on('chat message', (msg, sender) => {
-		console.log(sender);
-		if(sender === null || sender.substr(0, 2) !== "s:") return;
-		var senderHandle = cookieVerifier.unsign(sender.slice(2), cookieSecret);
-		if(!senderHandle) return;
-		socket.emit('ack', msg);
-		socket.broadcast.emit('msg', msg, senderHandle);
+	socket.on('chat message', async (msg, senderCookie, receiverHandle) => {
+		senderHandle = unsign(senderCookie);
+		if(senderHandle === undefined) return;
+		var result = await sendMessage(senderHandle, receiverHandle, msg, Date.now());
+		if(result){
+			socket.emit('ack', msg, senderHandle, receiverHandle);
+		}else{
+			socket.emit('nak', msg, senderHandle, receiverHandle);
+		}
+		
+	});
+
+	socket.on('refresh messages', async (senderCookie, receiverHandle) => {
+		senderHandle = unsign(senderCookie);
+		if(senderHandle === undefined) return;
+		var result = await getMessages(receiverHandle, senderHandle);
+		result.rows.forEach(r => {
+			socket.emit('msg', r.content, receiverHandle, senderHandle);
+		});
 	});
 });
 
