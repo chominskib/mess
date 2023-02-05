@@ -45,7 +45,15 @@
 				return document.cookie.split('; ').find((row) => row.startsWith('signed_user_id='))?.split('=')[1];
 			}
 
-			socket.emit('refresh messages', signed_user_id(), '<%= receiverHandle %>');
+			var lastUpdate = 0;
+
+			function refresh(){
+				socket.emit('refresh messages', signed_user_id(), '<%= receiverHandle %>', lastUpdate);
+				lastUpdate = Date.now();
+			}
+
+			setInterval(refresh, 1000);
+
 
 			var form = document.getElementById('form');
 			var input = document.getElementById('messagebox');
@@ -59,16 +67,8 @@
   			});
 
 			socket.on('ack', function(msg, senderHandle, receiverHandle) {
-				const newMessage = document.createElement('div');
-				newMessage.setAttribute('class', 'myMessage');
-				const newMessageContent = document.createTextNode("You: " + msg);
-
-				newMessage.appendChild(newMessageContent);
-
-				var messageList = document.getElementById('messages');
-				messageList.insertBefore(newMessage, null);
-				console.log(msg+' sent to ' + receiverHandle);
-  			});
+  				console.log("message '" + msg + "' to " + receiverHandle + " sent!"); 
+			});
 
 			socket.on('nak', function(msg, senderHandle, receiverHandle) {
   				alert("Something went wrong!");
@@ -84,7 +84,17 @@
 
 				var messageList = document.getElementById('messages');
 				messageList.insertBefore(newMessage, null);
-				console.log(msg+' received from ' + senderHandle);
+  			});
+
+			socket.on('msg from me', function(msg, senderHandle, receiverHandle) {
+				const newMessage = document.createElement('div');
+				newMessage.setAttribute('class', 'myMessage');
+				const newMessageContent = document.createTextNode("You: " + msg);
+
+				newMessage.appendChild(newMessageContent);
+
+				var messageList = document.getElementById('messages');
+				messageList.insertBefore(newMessage, null);
   			});
 		</script>
 	</body>

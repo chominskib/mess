@@ -75,10 +75,10 @@ async function sendMessage(senderUsername, receiverUsername, content, messagetim
 	return result;
 }
 
-async function getMessages(senderUsername, receiverUsername){
-	var result = await pool.query("select * from messages where id_sender=$1 and id_receiver=$2;", [await getUserId(senderUsername), await getUserId(receiverUsername)]);
+async function getMessages(senderUsername, receiverUsername, lastUpdate){
+	var result = await pool.query("select * from messages where id_sender=$1 and id_receiver=$2 and messagetime > $3;", [await getUserId(senderUsername), await getUserId(receiverUsername), lastUpdate]);
 
-	return result;
+	return result.rows;
 }
 
 app.set('view engine', 'ejs');
@@ -153,12 +153,20 @@ io.on('connection', (socket) => {
 		
 	});
 
-	socket.on('refresh messages', async (senderCookie, receiverHandle) => {
-		senderHandle = unsign(senderCookie);
-		if(senderHandle === undefined) return;
-		var result = await getMessages(receiverHandle, senderHandle);
-		result.rows.forEach(r => {
-			socket.emit('msg', r.content, receiverHandle, senderHandle);
+	socket.on('refresh messages', async (askerCookie, targetHandle, lastUpdate) => {
+		askerHandle = unsign(askerCookie);
+		if(askerHandle === undefined) return;
+		var result_from = await getMessages(targetHandle, askerHandle, lastUpdate);
+		var result_to = await getMessages(askerHandle, targetHandle, lastUpdate);
+
+		var askerId = await getUserId(askerHandle);
+		var targetId = await getUserId(targetHandle);
+
+		result = result_from.concat(result_to).sort((a, b) => (a.messagetime < b.messagetime ? -1 : 1));
+
+		result.forEach(r => {
+			if(r.id_sender == askerId) socket.emit('msg from me', r.content, askerHandle, targetHandle);
+			else if(r.id_sender == targetId) socket.emit('msg', r.content, targetHandle, askerHandle);
 		});
 	});
 });
