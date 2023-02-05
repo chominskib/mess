@@ -19,12 +19,20 @@ function getUserId(username){
 	return username;
 }
 
+function authorize(req, res, next){
+	if(!req.signedCookies.signed_user_id){
+		res.redirect('/login');
+	}else{
+		next();
+	}
+}
+
 app.set('view engine', 'ejs');
 app.set('views', './views');
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser(cookieSecret));
 
-app.get('/', (req, res) => {
+app.get('/', authorize, (req, res) => {
 	res.render('index');
 });
 
@@ -41,7 +49,7 @@ app.post('/login', (req, res) => {
 	var password = req.body.password;
 
 	if(correctPassword(username, password)){
-		res.cookie('user_id', getUserId(username), { signed: true, encode: String });
+		res.cookie('signed_user_id', getUserId(username), { signed: true, encode: String });
 		res.redirect('/');
 	}else{
 		res.render(login, { message: "Invalid username or password." });
@@ -51,6 +59,7 @@ app.post('/login', (req, res) => {
 io.on('connection', (socket) => {
 	console.log("New agent (" + socket.id + ") connected!");
 	socket.on('chat message', (msg, sender) => {
+		if(sender === null || sender.substr(0, 2) !== "s:") return;
 		var senderHandle = cookieVerifier.unsign(sender.slice(2), cookieSecret);
 		socket.emit('ack', msg);
 		socket.broadcast.emit('msg', msg, senderHandle);
