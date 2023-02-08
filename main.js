@@ -166,8 +166,8 @@ io.on('connection', (socket) => {
 		result = result_from.concat(result_to).sort((a, b) => (a.messagetime < b.messagetime ? -1 : 1));
 
 		result.forEach(r => {
-			if(r.id_sender == askerId) socket.emit('msg from me', r.content, askerHandle, targetHandle);
-			else if(r.id_sender == targetId) socket.emit('msg', r.content, targetHandle, askerHandle);
+			if(r.id_sender == askerId) socket.emit('msg from me', r.content, askerHandle, targetHandle, r.messagetime);
+			else if(r.id_sender == targetId) socket.emit('msg', r.content, targetHandle, askerHandle, r.messagetime);
 		});
 	});
 });
