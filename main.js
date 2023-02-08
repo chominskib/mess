@@ -3,6 +3,7 @@ var http = require('http');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var cookieVerifier = require('cookie-signature');
+var crypto = require('crypto');
 var pg = require('pg');
 
 var app = express();
@@ -10,7 +11,7 @@ var server = http.createServer(app);
 var { Server } = require('socket.io');
 var io = new Server(server);
 
-const cookieSecret = '7878gf5fvhjbhuyttycrtdxersedgiug778gy';
+const cookieSecret = 'TGuCOHg66xgbFvHMBtHJnsuiSgrTQi9e10C87VFGrPC1MBzNv9QB5Y5ZMGl4G1Co';
 
 const pool = new pg.Pool({
 	host: 'localhost',
@@ -20,11 +21,11 @@ const pool = new pg.Pool({
 });
 
 function random_salt(){
-	return "1234567890popiuytrewqasdfghjklkmnbvcxz";
+	return crypto.randomBytes(32).toString('hex');
 }
 
 function hash(s){
-	return s;
+	return crypto.createHash('sha256').update(s).digest('hex');
 }
 
 async function correctPassword(username, password){
