@@ -1,0 +1,26 @@
+<html>
+	<head>
+		<meta charset="UTF-8">
+
+
+		<link rel="icon" type="image/x-icon" href="/favicon.ico">
+		<title>Mess | WEPPO Project</title>
+
+	</head>
+	<body>
+		<center>
+			<h1> Mess </h1>
+		</center>
+
+		<a href="/logout"><button>Logout</button></a>
+
+		<div id="contacts">
+		<% for(var i = 0; i < contacts.length; i++){ %>
+			<div class="contact">
+				<a href="chat/<%= contacts[i].username %>"> <%= contacts[i].username %> </a>
+			</div>
+		<% } %>
+		</div>
+
+	</body>
+</html>

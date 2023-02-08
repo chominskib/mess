@@ -82,13 +82,19 @@ async function getMessages(senderUsername, receiverUsername, lastUpdate){
 	return result.rows;
 }
 
+async function getListOfUsers(){
+	var result = await pool.query("select * from users;");
+
+	return result.rows;
+}
+
 app.set('view engine', 'ejs');
 app.set('views', './views');
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser(cookieSecret));
 
-app.get('/', (req, res) => {
-	res.render('login', { message: "" });
+app.get('/', authorize, async (req, res) => {
+	res.render('welcome', { contacts: await getListOfUsers() } );
 });
 
 app.get('/chat/:receiverHandle', authorize, async (req, res) => {
@@ -139,6 +145,8 @@ app.get('/logout', authorize, (req, res) => {
 	res.cookie('signed_user_id', '', { maxAge: -1 });
 	res.redirect('/');
 });
+
+app.get('*', (req, res) => { res.redirect('/'); });
 
 io.on('connection', (socket) => {
 	console.log("New agent (" + socket.id + ") connected!");
