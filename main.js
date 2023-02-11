@@ -92,6 +92,11 @@ app.set('view engine', 'ejs');
 app.set('views', './views');
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser(cookieSecret));
+app.use(express.static('scripts/'));
+
+app.get('/scripts/chat.js', (req, res) => {
+	res.sendFile(path.join(__dirname, '/scripts/chat.js'));
+});
 
 app.get('/', authorize, async (req, res) => {
 	res.render('welcome', { contacts: await getListOfUsers() } );
@@ -105,6 +110,7 @@ app.get('/chat/:receiverHandle', authorize, async (req, res) => {
 	}
 	res.render('chat', { receiverHandle: req.params.receiverHandle });
 });
+
 
 app.get('/favicon.ico', (req, res) => {
 	res.sendFile(path.join(__dirname, '/images/favicon.ico'));
@@ -159,7 +165,6 @@ io.on('connection', (socket) => {
 		}else{
 			socket.emit('nak', msg, senderHandle, receiverHandle);
 		}
-		
 	});
 
 	socket.on('refresh messages', async (askerCookie, targetHandle, lastUpdate) => {
