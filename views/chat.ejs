@@ -35,11 +35,15 @@
 		</div>
 
 		<form action="" id="form">
-			<input id="messagebox" autocomplete="off" /><button>Send</button>
+			<input id="messagebox" autocomplete="off" />
+			
+			<input type="file" id="attachment">
+
+			<button>Send</button>
 		</form>
 		<script>
 			var receiverHandle = '<%= receiverHandle %>';
 		</script>
-		<script src="/scripts/chat.js" /> </script>
+		<script src="/scripts/chat.js"></script>
 	</body>
 </html>
