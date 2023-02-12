@@ -5,6 +5,8 @@ var cookieParser = require('cookie-parser');
 var cookieVerifier = require('cookie-signature');
 var crypto = require('crypto');
 var pg = require('pg');
+var fs = require('fs');
+var randomstring = require("randomstring")
 
 var app = express();
 var server = http.createServer(app);
@@ -69,9 +71,9 @@ function unsign(cookie){
 	return unsigned;
 }
 
-async function sendMessage(senderUsername, receiverUsername, content, messagetime){
-	var result = await pool.query("insert into messages (id_sender, id_receiver, content, messagetime) values ($1, $2, $3, $4);", 
-		     [await getUserId(senderUsername), await getUserId(receiverUsername), content, messagetime]);
+async function sendMessage(senderUsername, receiverUsername, content, messagetime, attachment_name, attachment_real_name){
+	var result = await pool.query("insert into messages (id_sender, id_receiver, content, messagetime, attachment, attachment_name) values ($1, $2, $3, $4, $5, $6);", 
+		     [await getUserId(senderUsername), await getUserId(receiverUsername), content, messagetime, attachment_name, attachment_real_name]);
 
 	return result;
 }
@@ -80,6 +82,13 @@ async function getMessages(senderUsername, receiverUsername, lastUpdate){
 	var result = await pool.query("select * from messages where id_sender=$1 and id_receiver=$2 and messagetime > $3;", [await getUserId(senderUsername), await getUserId(receiverUsername), lastUpdate]);
 
 	return result.rows;
+}
+
+async function verifyAttachment(username, attachment, lastUpdate){
+	return true;
+	var result = await pool.query("select * from messages where (id_sender=$1 or id_receiver=$1) and attachment=$2;", [await getUserId(username), attachment]);
+
+	return result.rows!=0;
 }
 
 async function getListOfUsers(){
@@ -93,6 +102,13 @@ app.set('views', './views');
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser(cookieSecret));
 app.use(express.static('scripts/'));
+app.use(express.static('attachments/'));
+
+app.get('/attachments/:name', async (req, res) => {
+	var result = req.params.name;
+	if (verifyAttachment(req, result.substring(0, 32)))
+		res.sendFile(path.join(__dirname, '/attachments/' + result));
+});
 
 app.get('/scripts/chat.js', (req, res) => {
 	res.sendFile(path.join(__dirname, '/scripts/chat.js'));
@@ -156,15 +172,24 @@ app.get('*', (req, res) => { res.redirect('/'); });
 
 io.on('connection', (socket) => {
 	console.log("New agent (" + socket.id + ") connected!");
-	socket.on('chat message', async (msg, senderCookie, receiverHandle) => {
+	socket.on('chat message', async (msg, att, att_real_name, senderCookie, receiverHandle) => {
 		senderHandle = unsign(senderCookie);
 		if(senderHandle === undefined) return;
-		var result = await sendMessage(senderHandle, receiverHandle, msg, Date.now());
+
+		var att_name = '';
+		if (att) att_name = randomstring.generate();
+
+		var result = await sendMessage(senderHandle, receiverHandle, msg, Date.now(), att_name, att_real_name);
+
 		if(result){
 			socket.emit('ack', msg, senderHandle, receiverHandle);
 		}else{
 			socket.emit('nak', msg, senderHandle, receiverHandle);
 		}
+		if (att) fs.writeFile(path.join(__dirname, '/attachments/') + att_name + "-" + att_real_name, att, (err) => {
+			if (err)	console.log(err);
+			else		console.log("Wrote file " + att_real_name + " as " + att_name + "-" + att_real_name);
+		});
 	});
 
 	socket.on('refresh messages', async (askerCookie, targetHandle, lastUpdate) => {
@@ -179,10 +204,17 @@ io.on('connection', (socket) => {
 		result = result_from.concat(result_to).sort((a, b) => (a.messagetime < b.messagetime ? -1 : 1));
 
 		result.forEach(r => {
-			if(r.id_sender == askerId) socket.emit('msg from me', r.content, askerHandle, targetHandle, r.messagetime);
-			else if(r.id_sender == targetId) socket.emit('msg', r.content, targetHandle, askerHandle, r.messagetime);
+			if (r.attachment) {
+				if(r.id_sender == askerId) socket.emit('msg from me', r.content, r.attachment, r.attachment_name, askerHandle, targetHandle, r.messagetime);
+				else if(r.id_sender == targetId) socket.emit('msg', r.content, r.attachment, r.attachment_name, targetHandle, askerHandle, r.messagetime);
+			} else {
+				if(r.id_sender == askerId) socket.emit('msg from me', r.content, null, "", askerHandle, targetHandle, r.messagetime);
+				else if(r.id_sender == targetId) socket.emit('msg', r.content, null, "", targetHandle, askerHandle, r.messagetime);
+
+			}
 		});
 	});
 });
 
 server.listen(80);
+
