@@ -202,7 +202,16 @@ io.on('connection', (socket) => {
 		var targetId = await getUserId(targetHandle);
 
 		result = result_from.concat(result_to).sort((a, b) => (a.messagetime < b.messagetime ? -1 : 1));
-
+		var messages = [];
+		for (var r of result){
+			if (r.id_sendMessage == askerId) {
+				messages.push({mine: false, msg: r.content, att: r.attachment, att_name: r.attachment_name, senderHandle: senderHandle, time: r.messagetime})
+			} else {
+				messages.push({mine: true, msg: r.content, att: r.attachment, att_name: r.attachment_name, senderHandle: askerHandle, time: r.messagetime})
+			}
+		}
+		socket.emit("load plenty", messages);
+		/*
 		result.forEach(r => {
 			if (r.attachment) {
 				if(r.id_sender == askerId) socket.emit('msg from me', r.content, r.attachment, r.attachment_name, askerHandle, targetHandle, r.messagetime);
@@ -213,6 +222,7 @@ io.on('connection', (socket) => {
 
 			}
 		});
+		*/
 	});
 });
 

@@ -14,6 +14,16 @@ function myHandle(){
 	return signed_user_id().split(':')[1].split('.')[0];
 }
 
+function stringDate(time){
+	var dateFormat = new Date(parseInt(time));
+	return (dateFormat.getFullYear()+
+			"/"+(dateFormat.getMonth()+1)+
+			"/"+dateFormat.getDate()+
+			" "+dateFormat.getHours()+
+			":"+dateFormat.getMinutes()+
+			":"+dateFormat.getSeconds());
+}
+
 var messagesTimes = [];
 var cnt = 0;
 var cooloff=500;
@@ -35,11 +45,14 @@ async function addMessage(msg, senderHandle, time, isMine, att, att_name, local)
 
 	newMessage.setAttribute('id', id);
 
-	console.log(att);
-	console.log(att_name);
+	var date_text = '<div>' + time + '</div>';
+	const dateBox = document.createElement('div');
+	dateBox.appendChild(document.createTextNode(stringDate(time)));
+	newMessage.appendChild(dateBox);
 
-	const newMessageContent = document.createTextNode(senderHandle + " at " + time + ": " + msg);
+	const newMessageContent = document.createTextNode(msg);
 	newMessage.appendChild(newMessageContent);
+
 	if (att){
 		var link = '/attachments/'+att+'-'+att_name;
 		var res = await isImgUrl(link);
@@ -69,7 +82,7 @@ async function addMessage(msg, senderHandle, time, isMine, att, att_name, local)
 var lastUpdate = 0;
 
 async function refresh(){
-	console.log('refreshed at ' + Date.now() + ' lu: ' + lastUpdate);
+	//console.log('refreshed at ' + Date.now() + ' lu: ' + lastUpdate);
 	var d;
 	await function(){ d = Date.now() }();
 	await socket.emit('refresh messages', signed_user_id(), receiverHandle, lastUpdate);
@@ -86,9 +99,12 @@ form.addEventListener('submit', async function(e) {
 	e.preventDefault();
 	if(input.value || attachment.value){
 		var msg = '', att = '';
-		if (input.value)		msg = input.value;
-		if (attachment.files)	att = { ...attachment.files};
-
+		if (input.value){
+			msg = input.value;
+		}
+		if (attachment.files){
+			att = { ...attachment.files};
+		}
 		await async function(){
 			if (!attachment.value)
 				socket.emit('chat message', msg, null, '', signed_user_id(), receiverHandle);
@@ -120,4 +136,7 @@ socket.on('msg from me', function(msg, att, att_name, senderHandle, receiverHand
 	addMessage(msg, senderHandle, time, true, att, att_name);
 });
 
-
+socket.on("load plenty", async function(messages) {
+	for (var i of messages)
+		await addMessage(i.msg, i.senderHandle, i.time, i.mine, i.att, i.att_name);
+});
