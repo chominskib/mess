@@ -204,10 +204,10 @@ io.on('connection', (socket) => {
 		result = result_from.concat(result_to).sort((a, b) => (a.messagetime < b.messagetime ? -1 : 1));
 		var messages = [];
 		for (var r of result){
-			if (r.id_sendMessage == askerId) {
-				messages.push({mine: false, msg: r.content, att: r.attachment, att_name: r.attachment_name, senderHandle: senderHandle, time: r.messagetime})
+			if (r.id_sender == askerId) {
+				messages.push({mine: true, msg: r.content, att: r.attachment, att_name: r.attachment_name, senderHandle: r.senderHandle, time: r.messagetime})
 			} else {
-				messages.push({mine: true, msg: r.content, att: r.attachment, att_name: r.attachment_name, senderHandle: askerHandle, time: r.messagetime})
+				messages.push({mine: false, msg: r.content, att: r.attachment, att_name: r.attachment_name, senderHandle: askerHandle, time: r.messagetime})
 			}
 		}
 		socket.emit("load plenty", messages);

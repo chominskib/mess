@@ -138,5 +138,8 @@ socket.on('msg from me', function(msg, att, att_name, senderHandle, receiverHand
 
 socket.on("load plenty", async function(messages) {
 	for (var i of messages)
+		{
+		console.log(i.mine);
 		await addMessage(i.msg, i.senderHandle, i.time, i.mine, i.att, i.att_name);
+		}
 });
