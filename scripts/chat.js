@@ -18,20 +18,21 @@ var messagesTimes = [];
 var cnt = 0;
 var cooloff=500;
 
-function checkValidTime(time, msg){
+function clearMessages(time, msg){
 	for(var i = Math.max(0, messagesTimes.length-5); i < messagesTimes.length; i++){
-		if(-cooloff <= time-messagesTimes[i][0] && time-messagesTimes[i][0] <= cooloff && messagesTimes[i][1] == msg) return false;
+		if(-cooloff <= time-messagesTimes[i][0] && time-messagesTimes[i][0] <= cooloff && messagesTimes[i][1] == msg){
+			var E = document.getElementById(messagesTimes[i][2]);
+			if (E)
+				E.remove();
+		}
 	}
-	return true;
 }
 
-async function addMessage(msg, senderHandle, time, isMine, att, att_name){
-	if(isMine && !checkValidTime(time, msg)) return -1;
-	if(isMine) messagesTimes.push([time, msg]);
+async function addMessage(msg, senderHandle, time, isMine, att, att_name, local){
 	const newMessage = document.createElement('div');
 	newMessage.setAttribute('class', isMine ? 'myMessage' : 'extMessage');
-
 	var id = 'message' + (cnt++);
+
 	newMessage.setAttribute('id', id);
 
 	console.log(att);
@@ -54,6 +55,10 @@ async function addMessage(msg, senderHandle, time, isMine, att, att_name){
 			frame.appendChild(document.createTextNode(att_name));
 		}
 	}
+
+	clearMessages(time, msg)
+	if(isMine) messagesTimes.push([time, msg, id]);
+
 	var messageList = document.getElementById('messages');
 	messageList.insertBefore(newMessage, null);
 
@@ -85,20 +90,17 @@ form.addEventListener('submit', async function(e) {
 		if (attachment.files)	att = { ...attachment.files};
 
 		await async function(){
-			if (!attachment.value)	socket.emit('chat message', msg, null, '', signed_user_id(), receiverHandle);
-			else					socket.emit('chat message', msg, att[0], att[0].name, signed_user_id(), receiverHandle);
+			if (!attachment.value)
+				socket.emit('chat message', msg, null, '', signed_user_id(), receiverHandle);
+			else
+				socket.emit('chat message', msg, att[0], att[0].name, signed_user_id(), receiverHandle);
 
 			await function(){ lastUpdate = Date.now(); }();
 		}();
-		await addMessage(msg, myHandle(), lastUpdate, true);
+		await addMessage(msg, myHandle(), lastUpdate, true, null, null, true);
 
 		input.value = '';
 		attachment.value='';
-
-		//await refresh().then(
-		//	await addTempMessage(msg, myHandle(), Date.now(), true, { ...att[0]}, { ...att[0].name})).then(
-		//	lastUpdate = Date.now());
-
 	}
 });
 socket.on('ack', function(msg, senderHandle, receiverHandle) {
