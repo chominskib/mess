@@ -2,6 +2,7 @@
 	<head>
 		<meta charset="UTF-8">
 
+		<link rel="stylesheet" href="/styles/style.css">
 		<link rel="icon" type="image/x-icon" href="/favicon.ico">
 		<title>Mess | WEPPO Project</title>
 
@@ -9,15 +10,21 @@
 	<body>
 		<center>
 			<h1> Mess </h1>
+
+			<%= message %>
+			<br>
+			<form stylee="position: absolute; top: 50%;"method="POST" action="/login">
+
+				<h2>Login</h2>
+				<input type="text" name="username" /> <br />
+				<h2>Password</h2> 
+				<input type="password" name="password" />
+
+				<br>
+				<br>
+				<input type="submit" />
+			</form>
 		</center>
-
-		<%= message %>
-
-		<form method="POST" action="/login">
-			Login: <input type="text" name="username" /> <br />
-			Password: <input type="password" name="password" />
-			<input type="submit" />
-		</form>
 
 	</body>
 </html>

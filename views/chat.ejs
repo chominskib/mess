@@ -3,19 +3,8 @@
 		<meta charset="UTF-8">
 
 		<!-- might want to move the style section into another file in future, but now it seems ok -->
-		<style> 
-			.myMessage {
-				text-align: right;
-				background-color: black;
-				color: white;
-			}
-
-			.extMessage {
-				text-align: left;
-				background-color: blue;
-				color: white;
-			}
-		</style>
+		
+		<link rel="stylesheet" href="/styles/style.css">
 
 		<link rel="icon" type="image/x-icon" href="/favicon.ico">
 		<title>Mess | WEPPO Project</title>
@@ -29,18 +18,20 @@
 
 		<a href="/logout"><button>Logout</button></a>
 
-		You're chatting with <%= receiverHandle %>.
+		<h2> You're chatting with <%= receiverHandle %>. </h2>
 
-		<div id='messages'>
+		<div id='chat_box'>
+			<div id='chat'>
+				<div id='messages'></div>
+
+				<form action="" id="form">
+					Attachment: <input type="file" id="attachment"> &nbsp;&nbsp;&nbsp;
+					<input id="messagebox" autocomplete="off" type=text />
+					&nbsp;
+					<button>Send</button>
+				</form>
+			</div>
 		</div>
-
-		<form action="" id="form">
-			<input id="messagebox" autocomplete="off" />
-			
-			<input type="file" id="attachment">
-
-			<button>Send</button>
-		</form>
 		<script>
 			var receiverHandle = '<%= receiverHandle %>';
 		</script>

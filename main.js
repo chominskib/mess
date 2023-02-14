@@ -11,7 +11,7 @@ var randomstring = require("randomstring")
 var app = express();
 var server = http.createServer(app);
 var { Server } = require('socket.io');
-var io = new Server(server);
+var io = new Server(server, {maxHttpBufferSize: 1e8});
 
 const cookieSecret = 'TGuCOHg66xgbFvHMBtHJnsuiSgrTQi9e10C87VFGrPC1MBzNv9QB5Y5ZMGl4G1Co';
 
@@ -102,12 +102,21 @@ app.set('views', './views');
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser(cookieSecret));
 app.use(express.static('scripts/'));
+app.use(express.static('styles/'));
 app.use(express.static('attachments/'));
 
 app.get('/attachments/:name', async (req, res) => {
 	var result = req.params.name;
 	if (verifyAttachment(req, result.substring(0, 32)))
 		res.sendFile(path.join(__dirname, '/attachments/' + result));
+});
+
+app.get('/styles/bg.png', (req, res) => {
+	res.sendFile(path.join(__dirname, '/styles/bg.png'));
+});
+
+app.get('/styles/style.css', (req, res) => {
+	res.sendFile(path.join(__dirname, '/styles/style.css'));
 });
 
 app.get('/scripts/chat.js', (req, res) => {
@@ -205,9 +214,9 @@ io.on('connection', (socket) => {
 		var messages = [];
 		for (var r of result){
 			if (r.id_sender == askerId) {
-				messages.push({mine: true, msg: r.content, att: r.attachment, att_name: r.attachment_name, senderHandle: r.senderHandle, time: r.messagetime})
+				messages.push({mine: true, msg: r.content, att: r.attachment, att_name: r.attachment_name, senderHandle: askerHandle, time: r.messagetime})
 			} else {
-				messages.push({mine: false, msg: r.content, att: r.attachment, att_name: r.attachment_name, senderHandle: askerHandle, time: r.messagetime})
+				messages.push({mine: false, msg: r.content, att: r.attachment, att_name: r.attachment_name, senderHandle: targetHandle, time: r.messagetime})
 			}
 		}
 		socket.emit("load plenty", messages);

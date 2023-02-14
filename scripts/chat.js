@@ -45,26 +45,32 @@ async function addMessage(msg, senderHandle, time, isMine, att, att_name, local)
 
 	newMessage.setAttribute('id', id);
 
-	var date_text = '<div>' + time + '</div>';
 	const dateBox = document.createElement('div');
-	dateBox.appendChild(document.createTextNode(stringDate(time)));
+	dateBox.setAttribute('class', 'date');
+	dateBox.appendChild(document.createTextNode(stringDate(time) + " " + senderHandle));
 	newMessage.appendChild(dateBox);
 
 	const newMessageContent = document.createTextNode(msg);
-	newMessage.appendChild(newMessageContent);
-
+	var divI = document.createElement('div');
+	divI.setAttribute('class', 'text');
+	newMessage.appendChild(divI);
+	divI.appendChild(newMessageContent);
 	if (att){
+		var div = document.createElement('div');
+		div.setAttribute('class', 'attachment');
 		var link = '/attachments/'+att+'-'+att_name;
 		var res = await isImgUrl(link);
 		if (res) {
 			const frame = document.createElement('img');
 			frame.setAttribute('src', link);
 			frame.setAttribute('width', 400);
-			newMessage.appendChild(frame);
+			newMessage.appendChild(div);
+			div.appendChild(frame);
 		} else {
 			const frame = document.createElement('a');
 			frame.setAttribute('href', link);
-			newMessage.appendChild(frame);
+			newMessage.appendChild(div);
+			div.appendChild(frame);
 			frame.appendChild(document.createTextNode(att_name));
 		}
 	}
