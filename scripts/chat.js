@@ -14,14 +14,22 @@ function myHandle(){
 	return signed_user_id().split(':')[1].split('.')[0];
 }
 
+function leadingZero(str, len){
+	out = String(str);
+	while(out.length < len){
+		out = "0" + out;
+	}
+	return out;
+}
+
 function stringDate(time){
 	var dateFormat = new Date(parseInt(time));
 	return (dateFormat.getFullYear()+
-			"/"+(dateFormat.getMonth()+1)+
-			"/"+dateFormat.getDate()+
-			" "+dateFormat.getHours()+
-			":"+dateFormat.getMinutes()+
-			":"+dateFormat.getSeconds());
+			"-"+leadingZero((dateFormat.getMonth()+1), 2)+
+			"-"+leadingZero(dateFormat.getDate(), 2)+
+			" "+leadingZero(dateFormat.getHours(), 2)+
+			":"+leadingZero(dateFormat.getMinutes(), 2)+
+			":"+leadingZero(dateFormat.getSeconds(), 2));
 }
 
 var messagesTimes = [];
